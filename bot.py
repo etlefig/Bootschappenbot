@@ -73,9 +73,14 @@ def render_list(db, list_name: str = "default") -> str:
     lines = [f"{title_for(list_name)}"]
     for cat, rows in grouped.items():
         lines.append(f"\n— {cat} —")
-        for it in rows:
+        open_rows = [it for it in rows if not it.get("done")]
+        done_rows = [it for it in rows if it.get("done")]
+        for it in open_rows:
             who = f" — {it['who']}" if it.get("who") else ""
             lines.append(f"- {it['text']}{who}")
+        for it in done_rows:
+            who = f" — {it['who']}" if it.get("who") else ""
+            lines.append(f"- ✅ {it['text']}{who}")
     return "\n".join(lines)
 
 # ====== Data ======
@@ -87,10 +92,31 @@ def add_item(text: str, who: str, list_name: str = "default", category: str | No
     if not text:
         return
     cat = category or guess_category(text)
-    db.insert({"text": text, "who": who, "list": list_name, "cat": cat})
+    db.insert({"text": text, "who": who, "list": list_name, "cat": cat, "done": False})
 
 def clear_list(list_name: str = "default"):
     db.remove(Items.list == list_name)
+
+def mark_done(query_text: str) -> str | None:
+    """Markeer het eerste item dat query_text bevat als done=True over alle lijsten."""
+    q = (query_text or "").lower().strip()
+    if not q:
+        return None
+    for it in db.all():
+        if q in (it.get("text", "").lower()):
+            db.update({"done": True}, doc_ids=[it.doc_id])
+            return f"Afgevinkt: {it['text']} ({title_for(it.get('list','default'))})"
+    return None
+
+def clear_done(list_name: str | None = None) -> int:
+    """Verwijder done=True items. Als list_name gezet is, alleen die lijst."""
+    if list_name:
+        docs = db.search((Items.list == list_name) & (Items.done == True))
+    else:
+        docs = db.search(Items.done == True)
+    count = len(docs)
+    db.remove(doc_ids=[d.doc_id for d in docs])
+    return count
 
 # ====== Bot handlers ======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -118,11 +144,16 @@ async def list_cmd(update, context):
     await update.message.reply_text(render_list(db, list_name))
 
 async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # /clear, /clear weekmenu, /clear toko, /clear done, /clear done weekmenu
+    args = [a.lower() for a in (context.args or [])]
+    if args and args[0] == "done":
+        target = args[1] if len(args) > 1 and args[1] in ["weekmenu", "toko", "default"] else None
+        removed = clear_done(target)
+        label = title_for(target) if target else "alle lijsten"
+        return await update.message.reply_text(f"Verwijderd (done) uit {label}: {removed} items.")
     list_name = "default"
-    if context.args:
-        arg = context.args[0].lower()
-        if arg in ["weekmenu", "toko"]:
-            list_name = arg
+    if args and args[0] in ["weekmenu", "toko"]:
+        list_name = args[0]
     clear_list(list_name)
     await update.message.reply_text(f"{title_for(list_name)} geleegd.")
 
@@ -146,10 +177,17 @@ async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     who = update.effective_user.first_name
     # Normaliseer whitespace
     txt_norm = re.sub(r"\s+", " ", txt_raw).strip()
-    if not txt_norm:
-        return
-
     low = txt_norm.lower()
+
+    # Done: markeer item op basis van tekst
+    m = re.match(r"^\s*done\s*[:：]\s*(.+)$", low)
+    if m:
+        original = re.match(r"^\s*done\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE).group(1).strip()
+        msg = mark_done(original)
+        if msg:
+            return await update.message.reply_text(msg)
+        else:
+            return await update.message.reply_text(f"Geen match gevonden voor: {original}")
 
     # 0) Item + directe categorie, bijv. "melk cat: Zuivel & Eieren"
     m_direct = re.match(r"^(.*?)\s+cat\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE)
