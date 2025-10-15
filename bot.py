@@ -25,7 +25,7 @@ CATEGORIES = [
 ]
 
 KEYWORDS: Dict[str, List[str]] = {
-    "Groente & Fruit": ["tomaat","komkommer","sla","ui","knoflook","wortel","paprika","appel","bananen","champignons", "citroen","limoen","spinazie","avocado","bosui","prei","courgette","broccoli","bloemkool","druif","peer","aardbei", "koriander", "peterselie", "munt", "basilicum"],
+    "Groente & Fruit": ["tomaten","komkommer","sla","ui","knoflook","wortels","paprika","appels","bananen","champignons", "kastanjechampignons", "citroen","limoen","spinazie","avocado","bosui","prei","courgette","broccoli","bloemkool","druiven","peer","peren", "aardbeien", "koriander", "peterselie", "munt", "basilicum"],
     "Brood & Banket": ["brood","pistolet","tortilla","wrap","bagel","croissant","bol","pita","naan"],
     "Zuivel & Eieren": ["melk","sojamelk","havermelk","yoghurt","kwark","room","slagroom","boter","kaas","parmezaan","eieren","ei"],
     "Vlees/Vis/Vega": ["kip","gehakt","rund","biefstuk","spek","tonijn","zalm","vis","vegetarisch","tofu","tempeh","falafel","vegaburger"],
