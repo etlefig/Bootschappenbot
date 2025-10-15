@@ -17,21 +17,27 @@ if not TOKEN or ":" not in TOKEN:
 # ====== Categorieën ======
 CATEGORIES = [
     "Groente & Fruit", "Brood & Banket", "Zuivel & Eieren",
-    "Vlees/Vis/Vega", "Droge Waren", "Diepvries",
-    "Drinken", "Huishoudelijk", "Badkamer", "Overig",
+    "Vlees/Vis/Vega", "Droge Waren", "Toko",
+    "Diepvries", "Drinken", "Huishoudelijk",
+    "Drogist", "Overig",
 ]
 
 KEYWORDS: Dict[str, List[str]] = {
-    "Groente & Fruit": ["tomaat","komkommer","sla","ui","knoflook","wortel","paprika","appel","banaan","citroen","limoen","spinazie","avocado","bosui","prei","courgette","broccoli","bloemkool","druif","peer","aardbei"],
+    "Groente & Fruit": ["tomaat","komkommer","sla","ui","knoflook","wortel","paprika","appel","bananen","champignons", "citroen","limoen","spinazie","avocado","bosui","prei","courgette","broccoli","bloemkool","druif","peer","aardbei", "koriander", "peterselie", "munt", "basilicum"],
     "Brood & Banket": ["brood","pistolet","tortilla","wrap","bagel","croissant","bol","pita","naan"],
     "Zuivel & Eieren": ["melk","sojamelk","havermelk","yoghurt","kwark","room","slagroom","boter","kaas","parmezaan","eieren","ei"],
-    "Vlees/Vis/Vega": ["kip","gehakt","rund","bief","spek","tonijn","zalm","vis","vegetarisch","tofu","tempeh","falafel","vegaburger"],
+    "Vlees/Vis/Vega": ["kip","gehakt","rund","biefstuk","spek","tonijn","zalm","vis","vegetarisch","tofu","tempeh","falafel","vegaburger"],
     "Droge Waren": ["pasta","rijst","quinoa","couscous","bulgur","meel","bloem","havermout","suiker","zout","peper","panko","bouillon","kruiden","specerijen","olie","olijfolie","azijn","sojasaus","ketjap","tomatenpuree","bonen","kikkererwten"],
     "Diepvries": ["diepvries","ijs","diepvriesgroente","erwten","spinazie diepvries","pizza diepvries"],
     "Drinken": ["sap","fris","cola","limonade","bier","wijn","koffie","thee"],
     "Huishoudelijk": ["wc-papier","keukenrol","afwasmiddel","bleek","alcohol schoonmaak","schoonmaak","afvalzak","spons","wasmiddel","wasverzachter","vaatwastablet","wasparfum"],
-    "Badkamer": ["tandpasta","shampoo","zeep","douchegel","scheermes","crème","luiers","billendoekjes","deo"],
+    "Drogist": ["tandpasta","shampoo","zeep","douchegel","scheermes","crème","luiers","billendoekjes","deo"],
     "Overig": []
+    "Toko": ["sambal", "ketjap", "sojasaus", "kokosmelk", "rijstpapier", "rijstnoedels",
+    "mirin", "miso", "gochujang", "nori", "tamarinde", "limoenblad",
+    "laos", "gember", "sereh", "citroengras", "trassi", "tempeh",
+    "sriracha", "chili", "chilipasta", "kroepoek", "rijst"
+],
 }
 
 # ====== Helpers ======
@@ -44,7 +50,11 @@ def guess_category(text: str) -> str:
     return "Overig"
 
 def title_for(list_name: str) -> str:
-    return "Weekmenu" if list_name == "weekmenu" else "Boodschappen"
+    if list_name == "weekmenu":
+        return "Weekmenu"
+    elif list_name == "toko":
+        return "Toko"
+    return "Boodschappen"
 
 def group_by_category(items) -> Dict[str, List[dict]]:
     grouped: Dict[str, List[dict]] = {c: [] for c in CATEGORIES}
@@ -96,16 +106,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
     context.user_data.setdefault("current_cat", None)
 
-async def list_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def list_cmd(update, context):
     list_name = "default"
-    if context.args and context.args[0].lower() == "weekmenu":
-        list_name = "weekmenu"
+    if context.args:
+        arg = context.args[0].lower()
+        if arg in ["weekmenu", "toko"]:
+            list_name = arg
     await update.message.reply_text(render_list(db, list_name))
 
 async def clear_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     list_name = "default"
-    if context.args and context.args[0].lower() == "weekmenu":
-        list_name = "weekmenu"
+    if context.args:
+        arg = context.args[0].lower()
+        if arg in ["weekmenu", "toko"]:
+            list_name = arg
     clear_list(list_name)
     await update.message.reply_text(f"{title_for(list_name)} geleegd.")
 
