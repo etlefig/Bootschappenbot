@@ -121,15 +121,30 @@ def clear_done(list_name: str | None = None) -> int:
 # ====== Bot handlers ======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
-        "Ik hou je lijsten met categorieën bij (zonder knoppen).\n\n"
+        "Ik hou je boodschappenlijst bij. Er is een lijst voor Boodschappen, een lijst voor Toko en een lijst voor het Weekmenu.\n\n"
         "• Gewoon typen → naar Boodschappen (auto-categorie)\n"
         "• ‘menu: …’ → naar Weekmenu\n"
         "• ‘toko: …’ → naar Toko\n"
+
         "• ‘cat: <Categorie>’ zet je invoercategorie voor volgende items\n"
+        "• ‘cat:’ zonder categorie wist de invoercategorie\n"
+        "• ‘<item> cat: <Categorie>’ voeg <item> toe aan Boodschappen met <Categorie>\n"
+
+        "• ‘done: <tekst>’ vink het eerste item met <tekst> af\n\n"
+
+        "Commands:\n"
+        "• /add <item> — voeg toe aan Boodschappen\n"
+        "• /menuadd <item> — voeg toe aan Weekmenu\n"
+
         "• /list — toon Boodschappen\n"
         "• /list weekmenu — toon Weekmenu\n"
+        "• /list toko — toon Toko\n"
+
         "• /clear — leeg Boodschappen\n"
         "• /clear weekmenu — leeg Weekmenu\n"
+        "• /clear done — verwijder alle afgevinkte items\n"
+        "• /clear done weekmenu — verwijder afgevinkte items uit Weekmenu\n"
+
         "Categorieën: " + ", ".join(CATEGORIES)
     )
     await update.message.reply_text(msg)
