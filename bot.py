@@ -32,7 +32,7 @@ KEYWORDS: Dict[str, List[str]] = {
     "Drinken": ["sap","fris","cola","limonade","bier","wijn","koffie","thee"],
     "Huishoudelijk": ["wc-papier","keukenrol","afwasmiddel","bleek","alcohol schoonmaak","schoonmaak","afvalzak","spons","wasmiddel","wasverzachter","vaatwastablet","wasparfum"],
     "Drogist": ["tandpasta","shampoo","zeep","douchegel","scheermes","crème","luiers","billendoekjes","deo"],
-    "Overig": []
+    "Overig": [],
     "Toko": ["sambal", "ketjap", "sojasaus", "kokosmelk", "rijstpapier", "rijstnoedels",
     "mirin", "miso", "gochujang", "nori", "tamarinde", "limoenblad",
     "laos", "gember", "sereh", "citroengras", "trassi", "tempeh",
