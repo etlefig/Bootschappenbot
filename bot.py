@@ -151,6 +151,18 @@ async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     low = txt_norm.lower()
 
+    # 0) Item + directe categorie, bijv. "melk cat: Zuivel & Eieren"
+    m_direct = re.match(r"^(.*?)\s+cat\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE)
+    if m_direct:
+        item_text = m_direct.group(1).strip()
+        cat_name = m_direct.group(2).strip()
+        if cat_name in CATEGORIES and item_text:
+            # standaard naar boodschappenlijst (default)
+            add_item(item_text, who, "default", cat_name)
+            return await update.message.reply_text(f"Toegevoegd aan Boodschappen ({cat_name}): {item_text}")
+        else:
+            return await update.message.reply_text(f"Onbekende categorie of leeg item. Kies uit: {', '.join(CATEGORIES)}")
+
     # 1) Invoercategorie via "cat: <Categorie>"
     m = re.match(r"^\s*cat\s*[:：]\s*(.+)$", low)
     if m:
