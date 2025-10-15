@@ -5,6 +5,7 @@ import re
 from tinydb import TinyDB, Query
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+print("🚀 Nieuwe versie geladen!")
 
 # ====== Config ======
 BASE = Path(__file__).parent
