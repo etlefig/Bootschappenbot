@@ -1,6 +1,7 @@
 import os, sys
 from pathlib import Path
 from typing import List, Dict
+import re
 from tinydb import TinyDB, Query
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
@@ -96,6 +97,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Ik hou je lijsten met categorieën bij (zonder knoppen).\n\n"
         "• Gewoon typen → naar Boodschappen (auto-categorie)\n"
         "• ‘menu: …’ → naar Weekmenu\n"
+        "• ‘toko: …’ → naar Toko\n"
         "• ‘cat: <Categorie>’ zet je invoercategorie voor volgende items\n"
         "• /list — toon Boodschappen\n"
         "• /list weekmenu — toon Weekmenu\n"
@@ -139,29 +141,44 @@ async def menu_add_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Toegevoegd aan Weekmenu.")
 
 async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    txt = (update.message.text or "").strip()
+    txt_raw = (update.message.text or "")
     who = update.effective_user.first_name
-    if not txt:
+    # Normaliseer whitespace
+    txt_norm = re.sub(r"\s+", " ", txt_raw).strip()
+    if not txt_norm:
         return
 
-    # Invoercategorie instellen: "cat: <Categorie>"
-    if txt.lower().startswith("cat:"):
-        cat = txt.split(":",1)[1].strip()
-        if cat in CATEGORIES:
-            context.user_data["current_cat"] = cat
-            return await update.message.reply_text(f"Invoercategorie gezet op: {cat}")
+    low = txt_norm.lower()
+
+    # 1) Invoercategorie via "cat: <Categorie>"
+    m = re.match(r"^\s*cat\s*[:：]\s*(.+)$", low)
+    if m:
+        cat_original = re.match(r"^\s*cat\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE).group(1).strip()
+        cat_clean = cat_original.strip()
+        if cat_clean in CATEGORIES:
+            context.user_data["current_cat"] = cat_clean
+            return await update.message.reply_text(f"Invoercategorie gezet op: {cat_clean}")
         else:
             return await update.message.reply_text(f"Onbekende categorie. Kies uit: {', '.join(CATEGORIES)}")
 
-    # Weekmenu via prefix "menu: …"
-    if txt.lower().startswith("menu:"):
-        add_item(txt.split(":", 1)[1], who, "weekmenu")
+    # 2) Weekmenu via "menu: ..." (tolerant voor spaties en alternatieve dubbelepunt)
+    m = re.match(r"^\s*menu\s*[:：]\s*(.+)$", low)
+    if m:
+        payload = re.match(r"^\s*menu\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE).group(1).strip()
+        add_item(payload, who, "weekmenu")
         return await update.message.reply_text("Toegevoegd aan Weekmenu.")
 
-    # Anders: Boodschappen (met evt. gekozen categorie)
+    # 3) Toko via "toko: ..." (tolerant)
+    m = re.match(r"^\s*toko\s*[:：]\s*(.+)$", low)
+    if m:
+        payload = re.match(r"^\s*toko\s*[:：]\s*(.+)$", txt_norm, flags=re.IGNORECASE).group(1).strip()
+        add_item(payload, who, "toko")
+        return await update.message.reply_text("Toegevoegd aan Toko.")
+
+    # 4) Anders: Boodschappen (met evt. gekozen categorie)
     cur_cat = context.user_data.get("current_cat")
-    add_item(txt, who, "default", cur_cat)
-    await update.message.reply_text(f"Toegevoegd aan Boodschappen: {txt}")
+    add_item(txt_norm, who, "default", cur_cat)
+    await update.message.reply_text(f"Toegevoegd aan Boodschappen: {txt_norm}")
 
 def main():
     app = Application.builder().token(TOKEN).build()
